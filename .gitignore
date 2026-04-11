@@ -1,0 +1,19 @@
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.production
+
+# Hardhat
+cache/
+artifacts/
+
+# Node
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# React build
+frontend/build/
+
+# Logs
+*.log
