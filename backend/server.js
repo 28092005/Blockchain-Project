@@ -43,10 +43,16 @@ const REPUTATION_ABI = [
   "function getFullStats(address) external view returns (tuple(uint256,uint256,uint256,uint256,uint256,uint256,bool))",
 ];
 
+const ACCESS_CONTROL_ABI = [
+  "function INSTITUTION_ROLE() external view returns (bytes32)",
+  "function grantRoleWithReason(bytes32, address, string) external"
+];
+
 const TIERS = ["PROBATION", "BRONZE", "SILVER", "GOLD", "PLATINUM"];
 
 const certRegistry  = new ethers.Contract(addresses.CertificateRegistry,    CERT_REGISTRY_ABI, provider);
 const reputationSC  = new ethers.Contract(addresses.ReputationScore,         REPUTATION_ABI,    provider);
+const accessControl = new ethers.Contract(addresses.CertChainAccessControl,  ACCESS_CONTROL_ABI, provider);
 
 function hashCertificate(buffer) {
   return "0x" + crypto.createHash("sha256").update(buffer).digest("hex");
@@ -138,6 +144,29 @@ app.get("/api/institution/:address", async (req, res) => {
     });
   } catch (error) {
     res.status(400).json({ error: error.message });
+  }
+});
+
+// ── Dev Auto-Grant Role ────────────────────────────────────────────
+// Instantly grants the INSTITUTION_ROLE to any address using the local Deployer Unlocked Account (Only for Local Dev)
+app.get("/api/faucet-role/:address", async (req, res) => {
+  try {
+    const addr = ethers.getAddress(req.params.address);
+    const deployer = await provider.getSigner(0); // Hardhat Account 0
+    const acWithSigner = accessControl.connect(deployer);
+    
+    const ROLE = await acWithSigner.INSTITUTION_ROLE();
+    const tx = await acWithSigner.grantRoleWithReason(ROLE, addr, "Dev UI Auto Faucet");
+    await tx.wait();
+    
+    const repWithSigner = new ethers.Contract(addresses.ReputationScore, [
+       "function initializeScore(address) external"
+    ], deployer);
+    await (await repWithSigner.initializeScore(addr)).wait();
+
+    res.json({ success: true, message: "INSTITUTION_ROLE successfully granted!" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

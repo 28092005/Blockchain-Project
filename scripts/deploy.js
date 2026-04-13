@@ -94,6 +94,16 @@ async function main() {
   await (await reputationScore.initializeScore(deployer.address)).wait();
   console.log(`   ✅ Reputation score initialized for deployer`);
 
+  // --- GRANT AUTOMATIC ACCESS FOR USER'S TEST WALLET ---
+  const userAddress = "0xdfcf12e7ebf193f0fea24f3a5700a30188a3bda1";
+  await (await accessControl.grantRoleWithReason(
+    INSTITUTION_ROLE, userAddress, "Auto-grant for Web3 Dev Testing"
+  )).wait();
+  console.log(`   ✅ INSTITUTION_ROLE  → user (${userAddress})`);
+  await (await reputationScore.initializeScore(userAddress)).wait();
+  console.log(`   ✅ Reputation score initialized for ${userAddress}`);
+  // -----------------------------------------------------
+
   // ── 6. Save Deployed Addresses ────────────────────────────────────
   const addresses = {
     CertChainAccessControl: acAddr,
