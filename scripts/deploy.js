@@ -53,8 +53,24 @@ async function main() {
   const crAddr = await certRegistry.getAddress();
   console.log(`   ✅ CertificateRegistry: ${crAddr}`);
 
-  // ── 5. Setup Roles ────────────────────────────────────────────────
-  console.log("\n5️⃣  Setting up roles...");
+  // ── 5. Deploy Credit Transfer System ──────────────────────────────
+  console.log("5️⃣  Deploying CreditTransferSystem...");
+  const creditSystem = await (await ethers.getContractFactory("CreditTransferSystem"))
+    .deploy(acAddr);
+  await creditSystem.waitForDeployment();
+  const csAddr = await creditSystem.getAddress();
+  console.log(`   ✅ CreditTransferSystem: ${csAddr}`);
+
+  // ── 6. Deploy Government Registry ─────────────────────────────────
+  console.log("6️⃣  Deploying GovernmentRegistry...");
+  const govRegistry = await (await ethers.getContractFactory("GovernmentRegistry"))
+    .deploy(acAddr);
+  await govRegistry.waitForDeployment();
+  const grAddr = await govRegistry.getAddress();
+  console.log(`   ✅ GovernmentRegistry: ${grAddr}`);
+
+  // ── 7. Setup Roles ────────────────────────────────────────────────
+  console.log("\n7️⃣  Setting up roles...");
 
   const SUPER_ADMIN_ROLE    = await accessControl.SUPER_ADMIN_ROLE();
   const INSTITUTION_ROLE    = await accessControl.INSTITUTION_ROLE();
@@ -104,12 +120,14 @@ async function main() {
   console.log(`   ✅ Reputation score initialized for ${userAddress}`);
   // -----------------------------------------------------
 
-  // ── 6. Save Deployed Addresses ────────────────────────────────────
+  // ── 8. Save Deployed Addresses ────────────────────────────────────
   const addresses = {
     CertChainAccessControl: acAddr,
     InstitutionValidator:   ivAddr,
     ReputationScore:        rsAddr,
     CertificateRegistry:    crAddr,
+    CreditTransferSystem:   csAddr,
+    GovernmentRegistry:     grAddr,
     deployer:               deployer.address,
     deployedAt:             new Date().toISOString(),
     network:                (await ethers.provider.getNetwork()).name,
@@ -124,14 +142,16 @@ async function main() {
   targets.forEach(p => fs.writeFileSync(p, json));
   console.log(`\n📄 deployed-addresses.json written to root, frontend/src, and backend`);
 
-  // ── 7. Summary ────────────────────────────────────────────────────
+  // ── 9. Summary ────────────────────────────────────────────────────
   console.log("\n╔══════════════════════════════════════════════════════╗");
   console.log("║   DEPLOYMENT SUMMARY                                 ║");
   console.log("╠══════════════════════════════════════════════════════╣");
-  console.log(`║  AccessControl      : ${acAddr} ║`);
+  console.log(`║  AccessControl       : ${acAddr} ║`);
   console.log(`║  InstitutionValidator: ${ivAddr} ║`);
-  console.log(`║  ReputationScore    : ${rsAddr} ║`);
-  console.log(`║  CertificateRegistry: ${crAddr} ║`);
+  console.log(`║  ReputationScore     : ${rsAddr} ║`);
+  console.log(`║  CertificateRegistry : ${crAddr} ║`);
+  console.log(`║  CreditTransferSystem: ${csAddr} ║`);
+  console.log(`║  GovernmentRegistry  : ${grAddr} ║`);
   console.log("╚══════════════════════════════════════════════════════╝\n");
   console.log("🎉 All contracts deployed successfully!\n");
 }
